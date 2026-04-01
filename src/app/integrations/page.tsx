@@ -1,7 +1,13 @@
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+
+  const token = (await cookies()).get("token")?.value
+
+  if (!token) redirect("/login")
 
   const integrations = [
     { name: "Gmail" },

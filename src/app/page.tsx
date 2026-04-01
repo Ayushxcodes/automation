@@ -1,8 +1,14 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-export default function Home() {
+export default async function Home() {
 
-  // for now just redirect to dashboard
+  const token = (await cookies()).get("token")?.value
+
+  if (!token) {
+    redirect("/login")
+  }
+
   redirect("/dashboard")
 
 }
