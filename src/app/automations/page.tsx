@@ -96,6 +96,23 @@ export default function AutomationsPage() {
     }
   }
 
+  async function runSingle(id: string) {
+    try {
+      const res = await fetch(`/api/automations/run/${id}`, { method: 'POST' })
+      const data = await res.json().catch(()=>null)
+      if (data?.success) {
+        toast.success('Automation run — saved log')
+        fetchLogs()
+      } else {
+        toast.error(data?.error || 'Failed to run automation')
+        console.error('runSingle failed', data)
+      }
+    } catch (err) {
+      toast.error('Failed to run automation')
+      console.error(err)
+    }
+  }
+
   async function deleteAutomation(id: string) {
     if (!id) {
       toast.error('Invalid automation id')
@@ -145,6 +162,14 @@ export default function AutomationsPage() {
     fetchList()
     fetchLogs()
   },[])
+
+  function groupedLogs() {
+    return logs.reduce((acc: any, log: any) => {
+      if (!acc[log.automationId]) acc[log.automationId] = []
+      acc[log.automationId].push(log)
+      return acc
+    }, {})
+  }
 
   function renderStructured(text: string | undefined | null) {
     if (!text) return null
@@ -267,30 +292,46 @@ export default function AutomationsPage() {
       <div className="pt-6">
         <h2 className="text-lg font-semibold mb-3">Your Automations</h2>
         {automations.length === 0 && <div className="text-sm text-gray-500">No automations yet</div>}
-        <ul className="grid gap-3 mt-2">
+        <div className="space-y-4 mt-2">
           {automations.map((a) => (
-            <li key={a.id} className="p-4 border rounded-md flex items-center justify-between">
-              <div className="flex-1">
-                <div className="font-medium">{triggerLabels[a.trigger] ?? a.trigger}</div>
-                <div className="text-sm text-gray-600">
-                  {Array.isArray(a.actions) ? (
-                    a.actions.map((act: string, i: number) => (
-                      <div key={i}>→ {actionLabels[act] ?? act}</div>
-                    ))
-                  ) : (
-                    <div>→ {actionLabels[a.action] ?? a.action}</div>
-                  )}
+            <div key={a.id} className="p-4 border rounded-md">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="font-medium">{triggerLabels[a.trigger] ?? a.trigger}</div>
+                  <div className="text-sm text-gray-600">
+                    {Array.isArray(a.actions) ? (
+                      a.actions.map((act: string, i: number) => (
+                        <div key={i}>→ {actionLabels[act] ?? act}</div>
+                      ))
+                    ) : (
+                      <div>→ {actionLabels[(a as any).action] ?? (a as any).action}</div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end ml-4">
+                  <div className="text-xs text-gray-500">{new Date(a.createdAt).toLocaleString()}</div>
+                  <div className="flex gap-2 mt-2">
+                    <Button onClick={() => runSingle(a.id)}>Run</Button>
+                    <Button variant="ghost" onClick={() => deleteAutomation(a.id)}>Delete</Button>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-col items-end ml-4">
-                <div className="text-xs text-gray-500">{new Date(a.createdAt).toLocaleString()}</div>
-                <Button variant="ghost" onClick={() => deleteAutomation(a.id)} className="mt-2">
-                  Delete
-                </Button>
+
+              <div className="mt-3">
+                <div className="text-sm font-semibold">Logs</div>
+                <div className="mt-2">
+                  {Object.entries(groupedLogs()).length === 0 && <div className="text-sm text-gray-500">No logs yet</div>}
+                  {groupedLogs()[a.id]?.map((log: any) => (
+                    <div key={log.id} className="border p-2 mt-2 rounded">
+                      <p className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString()}</p>
+                      <div className="mt-1">{renderStructured(log.output)}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
 
       <div className="pt-6">

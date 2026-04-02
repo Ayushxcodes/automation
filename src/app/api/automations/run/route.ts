@@ -59,7 +59,7 @@ export async function POST() {
           } else if (action === "generate_reply") {
             currentOutput = await askClaude(`Generate a reply for this:\n\n${currentOutput}`)
           } else if (action === "extract_tasks") {
-            currentOutput = await askClaude(`Extract tasks from this:\n\n${currentOutput}`)
+            currentOutput = await askClaude(`Extract tasks from the following text. Return output in this EXACT format:\n\nCompleted Tasks:\n- ...\n\nPending Tasks:\n- ...\n\nOpen Questions:\n- ...\n\nText:\n${currentOutput}`)
           } else {
             // unknown action - note and skip
             resItem.unknownAction = true
