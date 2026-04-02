@@ -23,6 +23,8 @@ model User {
   createdAt DateTime @default(now())
 
   integrations Integration[]
+
+  automations Automation[]
 }
 
 model Integration {
@@ -31,6 +33,20 @@ model Integration {
 
   type String
   accessToken String?
+
+  userId String
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+}
+
+model Automation {
+
+  id String @id @default(cuid())
+
+  trigger String
+  action String
 
   userId String
   user User @relation(fields: [userId], references: [id])
