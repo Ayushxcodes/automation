@@ -37,6 +37,7 @@ export default function AutomationsPage() {
   const [logs, setLogs] = useState<any[]>([])
   const [input, setInput] = useState("")
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [emails, setEmails] = useState<any[]>([])
 
   async function createAutomation() {
 
@@ -87,6 +88,64 @@ export default function AutomationsPage() {
       }
     } catch (err) {
       toast.error("Failed to run automations")
+      console.error(err)
+    }
+  }
+
+  async function createEmail() {
+    if (!input) {
+      toast.error('Paste email content first')
+      return
+    }
+    try {
+      const res = await fetch('/api/email/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: input })
+      })
+      const data = await res.json().catch(()=>null)
+      if (data?.success) {
+        toast.success('Email saved')
+        fetchEmails()
+        setInput('')
+      } else {
+        toast.error('Failed to save email')
+        console.error('createEmail failed', data)
+      }
+    } catch (err) {
+      toast.error('Failed to save email')
+      console.error(err)
+    }
+  }
+
+  async function fetchEmails() {
+    try {
+      const res = await fetch('/api/email/list')
+      const data = await res.json().catch(()=>null)
+      if (data?.success) setEmails(data.emails ?? [])
+      else console.error('Failed to fetch emails', data)
+    } catch (err) {
+      console.error('Error fetching emails', err)
+    }
+  }
+
+  async function runEmailOnAll(email: any) {
+    try {
+      const res = await fetch('/api/automations/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: email.content })
+      })
+      const data = await res.json().catch(()=>null)
+      if (data?.success) {
+        toast.success(`Automations executed — ${data.logsCreated ?? 0} logs`)
+        fetchLogs()
+      } else {
+        toast.error('Failed to run automations on email')
+        console.error('runEmailOnAll failed', data)
+      }
+    } catch (err) {
+      toast.error('Failed to run automations on email')
       console.error(err)
     }
   }
@@ -178,6 +237,7 @@ export default function AutomationsPage() {
   useEffect(()=>{
     fetchList()
     fetchLogs()
+    fetchEmails()
   },[])
 
   function groupedLogs() {
@@ -305,6 +365,10 @@ export default function AutomationsPage() {
           Create
         </Button>
 
+        <Button onClick={createEmail}>
+          Save Email
+        </Button>
+
         <Button onClick={runAutomations}>
           Run Automations
         </Button>
@@ -357,6 +421,26 @@ export default function AutomationsPage() {
         </div>
       </div>
 
+      <div className="pt-6">
+        <h2 className="text-lg font-semibold mb-3">Inbox</h2>
+        <div className="space-y-3">
+          {emails.length === 0 && <div className="text-sm text-gray-500">No emails yet</div>}
+          {emails.map((e) => (
+            <div key={e.id} className="p-3 border rounded-md">
+              <div className="flex items-start justify-between">
+                <div className="text-sm text-gray-700">
+                  <div className="text-xs text-gray-500">{new Date(e.createdAt).toLocaleString()}</div>
+                  <div className="mt-1 whitespace-pre-wrap text-sm">{e.content}</div>
+                </div>
+                <div className="flex flex-col ml-4 gap-2">
+                  <Button variant="ghost" onClick={() => setInput(e.content)}>Set as input</Button>
+                  <Button onClick={() => runEmailOnAll(e)}>Run on all</Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
       
 
     </div>
