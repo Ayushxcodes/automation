@@ -18,8 +18,22 @@ model User {
   id String @id @default(cuid())
 
   email String @unique
-
   password String
+
+  createdAt DateTime @default(now())
+
+  integrations Integration[]
+}
+
+model Integration {
+
+  id String @id @default(cuid())
+
+  type String
+  accessToken String?
+
+  userId String
+  user User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 
