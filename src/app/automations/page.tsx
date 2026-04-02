@@ -55,6 +55,38 @@ export default function AutomationsPage() {
     }
   }
 
+  async function deleteAutomation(id: string) {
+    if (!id) {
+      toast.error('Invalid automation id')
+      console.error('deleteAutomation called with falsy id:', id)
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/automations/delete/${id}`, { method: 'DELETE' })
+
+      let data: any = null
+      const ct = res.headers.get('content-type') || ''
+      if (ct.includes('application/json')) {
+        try { data = await res.json() } catch (e) { data = null }
+      } else {
+        try { data = await res.text() } catch (e) { data = null }
+      }
+
+      if (res.ok && data?.success !== false) {
+        toast.success('Automation deleted')
+        fetchList()
+      } else {
+        const msg = data?.error || data || `Status ${res.status}`
+        toast.error('Failed to delete automation')
+        console.error('Delete failed:', res.status, msg)
+      }
+    } catch (err) {
+      toast.error('Failed to delete automation')
+      console.error(err)
+    }
+  }
+
   async function fetchList() {
     try {
       const res = await fetch('/api/automations/list')
@@ -74,39 +106,52 @@ export default function AutomationsPage() {
 
   return (
 
-    <div className="p-6 space-y-4 w-96">
+    <div className="p-6 space-y-6 max-w-2xl mx-auto">
 
-      <h1>Create Automation</h1>
+      <h1 className="text-2xl font-bold">Create Automation</h1>
 
-      <Input
-        placeholder="Trigger (e.g. new email)"
-        value={trigger}
-        onChange={(e)=>setTrigger(e.target.value)}
-      />
+      <div className="grid gap-2">
+        <Input
+          className="w-full"
+          placeholder="Trigger (e.g. new email)"
+          value={trigger}
+          onChange={(e)=>setTrigger(e.target.value)}
+        />
 
-      <Input
-        placeholder="Action (e.g. send whatsapp)"
-        value={action}
-        onChange={(e)=>setAction(e.target.value)}
-      />
+        <Input
+          className="w-full"
+          placeholder="Action (e.g. send whatsapp)"
+          value={action}
+          onChange={(e)=>setAction(e.target.value)}
+        />
+      </div>
 
-      <Button onClick={createAutomation}>
-        Create
-      </Button>
+      <div className="flex gap-2">
+        <Button onClick={createAutomation}>
+          Create
+        </Button>
 
-      <Button onClick={runAutomations}>
-        Run Automations
-      </Button>
+        <Button onClick={runAutomations}>
+          Run Automations
+        </Button>
+      </div>
 
-      <div className="pt-4">
-        <h2 className="font-semibold mb-2">Your Automations</h2>
-        {automations.length === 0 && <div className="text-sm text-muted-foreground">No automations yet</div>}
-        <ul className="space-y-2 mt-2">
+      <div className="pt-6">
+        <h2 className="text-lg font-semibold mb-3">Your Automations</h2>
+        {automations.length === 0 && <div className="text-sm text-gray-500">No automations yet</div>}
+        <ul className="grid gap-3 mt-2">
           {automations.map((a) => (
-            <li key={a.id} className="p-3 border rounded">
-              <div><strong>Trigger:</strong> {a.trigger}</div>
-              <div><strong>Action:</strong> {a.action}</div>
-              <div className="text-xs text-gray-500">Created: {new Date(a.createdAt).toLocaleString()}</div>
+            <li key={a.id} className="p-4 border rounded-md flex items-center justify-between">
+              <div className="flex-1">
+                <div className="font-medium">{a.trigger}</div>
+                <div className="text-sm text-gray-600">{a.action}</div>
+              </div>
+              <div className="flex flex-col items-end ml-4">
+                <div className="text-xs text-gray-500">{new Date(a.createdAt).toLocaleString()}</div>
+                <Button variant="ghost" onClick={() => deleteAutomation(a.id)} className="mt-2">
+                  Delete
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
