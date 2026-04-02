@@ -53,4 +53,19 @@ model Automation {
 
   createdAt DateTime @default(now())
 
+  logs AutomationLog[]
+
+}
+
+model AutomationLog {
+
+  id String @id @default(cuid())
+
+  output String
+
+  automationId String
+  automation Automation @relation(fields: [automationId], references: [id])
+
+  createdAt DateTime @default(now())
+
 }

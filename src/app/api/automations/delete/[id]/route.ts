@@ -23,6 +23,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id?: 
       return NextResponse.json({ success: false }, { status: 404 })
     }
 
+    // delete related logs first to avoid foreign key constraint errors
+    await prisma.automationLog.deleteMany({ where: { automationId: id } })
     await prisma.automation.delete({ where: { id } })
 
     return NextResponse.json({ success: true })

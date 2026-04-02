@@ -2,14 +2,39 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from 'sonner'
 
 export default function AutomationsPage() {
 
-  const [trigger, setTrigger] = useState("")
-  const [action, setAction] = useState("")
+  const TRIGGERS = [
+    { label: "New Email", value: "new_email" },
+    { label: "New Message", value: "new_message" },
+  ]
+
+  const ACTIONS = [
+    { label: "Summarize with AI", value: "summarize" },
+    { label: "Generate Reply", value: "generate_reply" },
+    { label: "Extract Tasks", value: "extract_tasks" },
+  ]
+
+  const triggerLabels: any = {
+    new_email: "New Email",
+    "new email": "New Email",
+    new_message: "New Message",
+  }
+
+  const actionLabels: any = {
+    summarize: "Summarize",
+    generate_reply: "Generate Reply",
+    extract_tasks: "Extract Tasks",
+    "send whatsapp": "Send WhatsApp",
+  }
+
+  const [trigger, setTrigger] = useState("new_email")
+  const [action, setAction] = useState("summarize")
   const [automations, setAutomations] = useState<any[]>([])
+  const [logs, setLogs] = useState<any[]>([])
 
   async function createAutomation() {
 
@@ -28,11 +53,12 @@ export default function AutomationsPage() {
 
     })
     const data = await res.json().catch(()=>null)
-    if (data?.success) {
+      if (data?.success) {
       toast.success("Automation created")
       fetchList()
-      setTrigger("")
-      setAction("")
+        fetchLogs()
+      setTrigger("new_email")
+      setAction("summarize")
     } else {
       toast.error("Failed to create automation")
       console.error(data)
@@ -44,14 +70,29 @@ export default function AutomationsPage() {
     try {
       const res = await fetch("/api/automations/run", { method: "POST" })
       const data = await res.json().catch(()=>null)
-      if (data?.success) toast.success("Automations executed (check console)")
+      if (data?.success) {
+        toast.success(`Automations executed — ${data.logsCreated ?? 0} logs`)
+        fetchLogs()
+      }
       else {
-        toast.error("Failed to run automations")
-        console.error(data)
+        const msg = data?.error || JSON.stringify(data)
+        toast.error(msg || "Failed to run automations")
+        console.error('Run automations failed:', data)
       }
     } catch (err) {
       toast.error("Failed to run automations")
       console.error(err)
+    }
+  }
+
+  async function fetchLogs() {
+    try {
+      const res = await fetch('/api/automations/logs')
+      const data = await res.json().catch(()=>null)
+      if (data?.success) setLogs(data.logs ?? [])
+      else console.error('Failed to fetch logs', data)
+    } catch (err) {
+      console.error('Error fetching logs', err)
     }
   }
 
@@ -102,6 +143,7 @@ export default function AutomationsPage() {
 
   useEffect(()=>{
     fetchList()
+    fetchLogs()
   },[])
 
   return (
@@ -111,19 +153,33 @@ export default function AutomationsPage() {
       <h1 className="text-2xl font-bold">Create Automation</h1>
 
       <div className="grid gap-2">
-        <Input
-          className="w-full"
-          placeholder="Trigger (e.g. new email)"
-          value={trigger}
-          onChange={(e)=>setTrigger(e.target.value)}
-        />
+        <label className="text-sm font-medium">Trigger</label>
+        <Select value={trigger} onValueChange={setTrigger}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Trigger" />
+          </SelectTrigger>
+          <SelectContent>
+            {TRIGGERS.map((t) => (
+              <SelectItem key={t.value} value={t.value}>
+                {t.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <Input
-          className="w-full"
-          placeholder="Action (e.g. send whatsapp)"
-          value={action}
-          onChange={(e)=>setAction(e.target.value)}
-        />
+        <label className="text-sm font-medium">Action</label>
+        <Select value={action} onValueChange={setAction}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Action" />
+          </SelectTrigger>
+          <SelectContent>
+            {ACTIONS.map((a) => (
+              <SelectItem key={a.value} value={a.value}>
+                {a.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex gap-2">
@@ -143,8 +199,8 @@ export default function AutomationsPage() {
           {automations.map((a) => (
             <li key={a.id} className="p-4 border rounded-md flex items-center justify-between">
               <div className="flex-1">
-                <div className="font-medium">{a.trigger}</div>
-                <div className="text-sm text-gray-600">{a.action}</div>
+                <div className="font-medium">{triggerLabels[a.trigger] ?? a.trigger}</div>
+                <div className="text-sm text-gray-600">{actionLabels[a.action] ?? a.action}</div>
               </div>
               <div className="flex flex-col items-end ml-4">
                 <div className="text-xs text-gray-500">{new Date(a.createdAt).toLocaleString()}</div>
@@ -152,6 +208,19 @@ export default function AutomationsPage() {
                   Delete
                 </Button>
               </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="pt-6">
+        <h2 className="text-lg font-semibold mb-3">Automation Logs</h2>
+        {logs.length === 0 && <div className="text-sm text-gray-500">No logs yet</div>}
+        <ul className="grid gap-3 mt-2">
+          {logs.map((l) => (
+            <li key={l.id} className="p-4 border rounded-md">
+              <div className="text-sm text-gray-500">Automation: {l.automationId} • {new Date(l.createdAt).toLocaleString()}</div>
+              <div className="mt-2">{l.output}</div>
             </li>
           ))}
         </ul>
