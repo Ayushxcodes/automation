@@ -50,17 +50,19 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-center">Automation Dashboard</h1>
         <p className="text-sm text-gray-500 text-center">Sign in to continue to your Automation Dashboard</p>
 
-        <Input
+        <input
           placeholder="email"
           value={email}
           onChange={(e)=>setEmail(e.target.value)}
+          className="h-8 w-full min-w-0 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 md:text-xs dark:bg-input/30 dark:disabled:bg-input/80"
         />
 
-        <Input
+        <input
           placeholder="password"
           type="password"
           value={password}
           onChange={(e)=>setPassword(e.target.value)}
+          className="h-8 w-full min-w-0 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 md:text-xs dark:bg-input/30 dark:disabled:bg-input/80"
         />
 
         <Button
