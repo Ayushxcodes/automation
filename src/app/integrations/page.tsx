@@ -14,7 +14,8 @@ export default function IntegrationsPage() {
     const data = await res.json()
 
     if (data.success) {
-      const types = data.integrations.map((i:any)=>i.type)
+      // prefer server-provided connected types (only when accessToken exists)
+      const types = data.connectedTypes ?? data.integrations.map((i:any)=>i.type)
       setConnected(types)
     }
 
@@ -25,6 +26,12 @@ export default function IntegrationsPage() {
   },[])
 
   async function connect(type: string) {
+
+    if (type === 'gmail') {
+      // redirect user to Google OAuth connect
+      window.location.href = '/api/google/connect'
+      return
+    }
 
     await fetch("/api/integrations/connect", {
 
@@ -40,6 +47,26 @@ export default function IntegrationsPage() {
 
     fetchIntegrations()
 
+  }
+
+  async function disconnect(type: string) {
+    try {
+      const res = await fetch('/api/integrations/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type })
+      })
+      const data = await res.json()
+      if (data?.success) {
+        fetchIntegrations()
+      } else {
+        console.error('Failed to disconnect', data)
+        alert('Disconnect failed')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Disconnect failed')
+    }
   }
 
   function isConnected(type:string){
@@ -61,12 +88,23 @@ export default function IntegrationsPage() {
               {isConnected(type) ? "✅ Connected" : "❌ Not Connected"}
             </p>
 
-            <Button
-              disabled={isConnected(type)}
-              onClick={()=>connect(type)}
-            >
-              {isConnected(type) ? "Connected" : "Connect"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                disabled={isConnected(type)}
+                onClick={()=>connect(type)}
+              >
+                {isConnected(type) ? "Connected" : "Connect"}
+              </Button>
+              {isConnected(type) && (
+                <Button variant="ghost" onClick={() => disconnect(type)}>Disconnect</Button>
+              )}
+              {type === 'gmail' && (
+                <>
+                  <Button onClick={() => { window.location.href = '/api/google/connect' }} variant="ghost">Connect Gmail</Button>
+                  <Button onClick={async () => { const res = await fetch('/api/google/fetch'); const data = await res.json(); if (data?.success) { alert('Fetched emails') ; fetchIntegrations() } else { alert('Fetch failed') } }}>Fetch Emails</Button>
+                </>
+              )}
+            </div>
 
           </CardContent>
         </Card>

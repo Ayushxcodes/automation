@@ -25,9 +25,13 @@ export async function GET() {
       where: { userId }
     })
 
+    // mark a type as "connected" only when accessToken is present
+    const connectedTypes = integrations.filter(i => !!i.accessToken).map(i => i.type)
+
     return NextResponse.json({
       success:true,
-      integrations
+      integrations,
+      connectedTypes
     })
 
   }
