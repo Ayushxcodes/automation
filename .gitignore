@@ -33,6 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+
 # vercel
 .vercel
 
@@ -41,3 +42,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+public/client_secret_*.json
+public/client_secret_588773485613-hats2vh7bn52o5g0ohn5pu5dra14u59g.apps.googleusercontent.com.json
+public/client_secret_*.json
