@@ -9,6 +9,14 @@ declare global {
 const connectionString = process.env.DATABASE_URL ?? ''
 const adapter = new PrismaPg({ connectionString })
 
+// Debug: inspect imported PrismaClient value when module loads
+try {
+  // eslint-disable-next-line no-console
+  console.log('Imported PrismaClient (from generated):', typeof PrismaClient)
+} catch (e) {
+  // ignore
+}
+
 export const prisma: PrismaClient =
   global.prisma ?? new PrismaClient({ adapter } as Prisma.Subset<Prisma.PrismaClientOptions, Prisma.PrismaClientOptions>)
 
