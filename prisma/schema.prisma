@@ -46,7 +46,7 @@ model Automation {
   id String @id @default(cuid())
 
   trigger String
-  action String
+  actions String[]
 
   userId String
   user User @relation(fields: [userId], references: [id])
