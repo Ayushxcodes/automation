@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 export default function Navbar(){
   const [user, setUser] = useState<{id:number,email:string}|null>(null)
   const pathname = usePathname()
+
 
   useEffect(()=>{
     let mounted = true
@@ -17,10 +18,12 @@ export default function Navbar(){
     return ()=>{ mounted = false }
   },[pathname])
 
+  const router = useRouter()
+
   async function logout(){
     await fetch('/api/auth/logout',{ method: 'POST' })
-    // hard navigate so server redirects/layout re-evaluates
-    location.href = '/login'
+    // SPA navigation so app state updates without full reload
+    router.push('/login')
   }
 
   return (
