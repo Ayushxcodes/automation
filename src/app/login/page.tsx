@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from 'sonner'
 import Link from "next/link"
 
 export default function LoginPage() {
@@ -29,12 +30,13 @@ export default function LoginPage() {
       const data = await res.json().catch(() => ({ success: false, error: 'Login failed' }))
 
       if (data && data.success) {
+        toast.success('Logged in successfully')
         router.push("/dashboard")
       } else {
-        alert(data?.error || 'Login failed')
+        toast.error(data?.error || 'Login failed')
       }
     } catch (err) {
-      alert('Network error')
+      toast.error('Network error')
     } finally {
       setLoading(false)
     }

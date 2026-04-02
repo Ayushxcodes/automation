@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from 'sonner'
 
 export default function RegisterPage() {
 
@@ -25,13 +26,13 @@ export default function RegisterPage() {
       const data = await res.json().catch(() => ({ success: false, error: 'Registration failed' }))
 
       if (data && data.success) {
-        alert("Registration successful — please log in.")
+        toast.success("Registration successful — please log in.")
         router.push("/login")
       } else {
-        alert(data?.error || 'Registration failed')
+        toast.error(data?.error || 'Registration failed')
       }
     } catch (e) {
-      alert('Network error')
+      toast.error('Network error')
     } finally {
       setLoading(false)
     }
