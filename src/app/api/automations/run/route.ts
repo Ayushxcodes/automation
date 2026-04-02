@@ -32,7 +32,9 @@ export async function POST() {
     for (const auto of automations) {
       // Sample content for demo/testing. In future this should come from the integration trigger payload.
       const emailText = "Hey, we have a meeting tomorrow at 10am. Please prepare the slides and send the report."
-      const resItem: any = { id: auto.id, trigger: auto.trigger, action: auto.action }
+      // normalize actions (support new `actions` array or legacy `action` string)
+      const actionsList: string[] = Array.isArray(auto.actions) ? auto.actions : ((auto as any).action ? [(auto as any).action] : [])
+      const resItem: any = { id: auto.id, trigger: auto.trigger, actions: actionsList }
 
       try {
         const triggerMatches = ["new_email", "new email", "new_message"].includes(auto.trigger)
@@ -43,25 +45,30 @@ export async function POST() {
           continue
         }
 
-        let output: string | null = null
-
-        if (auto.action === "summarize") {
-          output = await askClaude(`Summarize this email in 2-3 lines:\n\n${emailText}`)
-        } else if (auto.action === "generate_reply") {
-          output = await askClaude(`Write a short, professional reply to this email:\n\n${emailText}\n\nKeep it concise (2-3 sentences).`)
-        } else if (auto.action === "extract_tasks") {
-          output = await askClaude(`Extract the action items from this email as a bullet list:\n\n${emailText}`)
-        } else {
-          // unknown action - skip but record
-          resItem.unknownAction = true
+        if (actionsList.length === 0) {
           resItem.skipped = true
           results.push(resItem)
           continue
         }
 
-        resItem.output = output
+        let currentOutput = emailText
 
-        const log = await prisma.automationLog.create({ data: { output: output ?? '', automationId: auto.id } })
+        for (const action of actionsList) {
+          if (action === "summarize") {
+            currentOutput = await askClaude(`Summarize this:\n\n${currentOutput}`)
+          } else if (action === "generate_reply") {
+            currentOutput = await askClaude(`Generate a reply for this:\n\n${currentOutput}`)
+          } else if (action === "extract_tasks") {
+            currentOutput = await askClaude(`Extract tasks from this:\n\n${currentOutput}`)
+          } else {
+            // unknown action - note and skip
+            resItem.unknownAction = true
+          }
+        }
+
+        resItem.output = currentOutput
+
+        const log = await prisma.automationLog.create({ data: { output: currentOutput ?? '', automationId: auto.id } })
         resItem.logId = log.id
         resItem.saved = true
         logsCreated++

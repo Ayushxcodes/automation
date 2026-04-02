@@ -32,7 +32,7 @@ export default function AutomationsPage() {
   }
 
   const [trigger, setTrigger] = useState("new_email")
-  const [action, setAction] = useState("summarize")
+  const [actions, setActions] = useState<string[]>([])
   const [automations, setAutomations] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
 
@@ -48,7 +48,7 @@ export default function AutomationsPage() {
 
       body: JSON.stringify({
         trigger,
-        action
+        actions
       })
 
     })
@@ -58,7 +58,7 @@ export default function AutomationsPage() {
       fetchList()
         fetchLogs()
       setTrigger("new_email")
-      setAction("summarize")
+      setActions([])
     } else {
       toast.error("Failed to create automation")
       console.error(data)
@@ -146,6 +146,66 @@ export default function AutomationsPage() {
     fetchLogs()
   },[])
 
+  function renderStructured(text: string | undefined | null) {
+    if (!text) return null
+    const lines = text.split(/\r?\n/)
+    const elems: any[] = []
+    let listBuffer: string[] | null = null
+
+    const flushList = () => {
+      if (!listBuffer) return
+      elems.push(
+        <ul className="pl-5 list-disc my-2" key={elems.length}>
+          {listBuffer.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      )
+      listBuffer = null
+    }
+
+    for (const raw of lines) {
+      const line = raw.trim()
+      if (line === "") {
+        flushList()
+        elems.push(<div key={elems.length} className="my-2" />)
+        continue
+      }
+
+      if (/^#{1,6}\s+/.test(line)) {
+        flushList()
+        const level = Math.min(6, line.match(/^#+/)![0].length)
+        const content = line.replace(/^#{1,6}\s+/, "")
+        const Tag = (`h${Math.max(3, level)}`) as any
+        elems.push(<Tag key={elems.length} className="font-semibold">{content}</Tag>)
+        continue
+      }
+
+      if (/^[-*]\s+/.test(line)) {
+        const item = line.replace(/^[-*]\s+/, "")
+        listBuffer = listBuffer ?? []
+        listBuffer.push(item)
+        continue
+      }
+
+      if (/^\d+\.\s+/.test(line)) {
+        // numbered list - render as bullets for simplicity
+        const item = line.replace(/^\d+\.\s+/, "")
+        listBuffer = listBuffer ?? []
+        listBuffer.push(item)
+        continue
+      }
+
+      // paragraph line
+      flushList()
+      elems.push(<p key={elems.length} className="my-1 whitespace-pre-wrap">{line}</p>)
+    }
+
+    flushList()
+
+    return <div className="text-sm text-gray-800">{elems}</div>
+  }
+
   return (
 
     <div className="p-6 space-y-6 max-w-2xl mx-auto">
@@ -167,10 +227,13 @@ export default function AutomationsPage() {
           </SelectContent>
         </Select>
 
-        <label className="text-sm font-medium">Action</label>
-        <Select value={action} onValueChange={setAction}>
+        <label className="text-sm font-medium">Action (add steps)</label>
+        <Select onValueChange={(v: string) => {
+          if (!v) return
+          setActions((prev) => [...prev, v])
+        }}>
           <SelectTrigger>
-            <SelectValue placeholder="Select Action" />
+            <SelectValue placeholder="Add Action" />
           </SelectTrigger>
           <SelectContent>
             {ACTIONS.map((a) => (
@@ -180,6 +243,15 @@ export default function AutomationsPage() {
             ))}
           </SelectContent>
         </Select>
+
+        <div className="space-y-2 mt-2">
+          {actions.map((act, index) => (
+            <div key={index} className="flex items-center justify-between border p-2 rounded">
+              <div>Step {index + 1}: {actionLabels[act] ?? act}</div>
+              <Button variant="ghost" onClick={() => setActions(prev => prev.filter((_, i) => i !== index))}>Remove</Button>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -200,7 +272,15 @@ export default function AutomationsPage() {
             <li key={a.id} className="p-4 border rounded-md flex items-center justify-between">
               <div className="flex-1">
                 <div className="font-medium">{triggerLabels[a.trigger] ?? a.trigger}</div>
-                <div className="text-sm text-gray-600">{actionLabels[a.action] ?? a.action}</div>
+                <div className="text-sm text-gray-600">
+                  {Array.isArray(a.actions) ? (
+                    a.actions.map((act: string, i: number) => (
+                      <div key={i}>→ {actionLabels[act] ?? act}</div>
+                    ))
+                  ) : (
+                    <div>→ {actionLabels[a.action] ?? a.action}</div>
+                  )}
+                </div>
               </div>
               <div className="flex flex-col items-end ml-4">
                 <div className="text-xs text-gray-500">{new Date(a.createdAt).toLocaleString()}</div>
@@ -220,7 +300,9 @@ export default function AutomationsPage() {
           {logs.map((l) => (
             <li key={l.id} className="p-4 border rounded-md">
               <div className="text-sm text-gray-500">Automation: {l.automationId} • {new Date(l.createdAt).toLocaleString()}</div>
-              <div className="mt-2">{l.output}</div>
+              <div className="mt-2">
+                {renderStructured(l.output)}
+              </div>
             </li>
           ))}
         </ul>

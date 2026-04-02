@@ -8,10 +8,10 @@ export async function POST(req: Request) {
   try {
 
     const body = await req.json()
-    const { trigger, action } = body ?? {}
+    const { trigger, actions } = body ?? {}
 
     // basic validation
-    if (typeof trigger !== 'string' || typeof action !== 'string') {
+    if (typeof trigger !== 'string' || !Array.isArray(actions)) {
       return NextResponse.json({ success: false, error: 'Invalid payload' }, { status: 400 })
     }
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const automation = await prisma.automation.create({
       data: {
         trigger,
-        action,
+        actions,
         userId,
       },
     })
