@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 import { askClaude } from "@/lib/claude"
 
-export async function POST() {
+export async function POST(req: Request) {
 
   try {
 
@@ -24,14 +24,15 @@ export async function POST() {
 
     const userId = decoded.userId
 
-    const automations = await prisma.automation.findMany({ where: { userId } })
+    // read input and optional automationId from request body
+    const { input, automationId } = await req.json()
+
+    const automations = await prisma.automation.findMany({ where: { userId, ...(automationId && { id: automationId }) } })
 
     const results: Array<any> = []
     let logsCreated = 0
 
     for (const auto of automations) {
-      // Sample content for demo/testing. In future this should come from the integration trigger payload.
-      const emailText = "Hey, we have a meeting tomorrow at 10am. Please prepare the slides and send the report."
       // normalize actions (support new `actions` array or legacy `action` string)
       const actionsList: string[] = Array.isArray(auto.actions) ? auto.actions : ((auto as any).action ? [(auto as any).action] : [])
       const resItem: any = { id: auto.id, trigger: auto.trigger, actions: actionsList }
@@ -51,7 +52,7 @@ export async function POST() {
           continue
         }
 
-        let currentOutput = emailText
+        let currentOutput = input
 
         for (const action of actionsList) {
           if (action === "summarize") {
@@ -59,7 +60,7 @@ export async function POST() {
           } else if (action === "generate_reply") {
             currentOutput = await askClaude(`Generate a reply for this:\n\n${currentOutput}`)
           } else if (action === "extract_tasks") {
-            currentOutput = await askClaude(`Extract tasks from the following text. Return output in this EXACT format:\n\nCompleted Tasks:\n- ...\n\nPending Tasks:\n- ...\n\nOpen Questions:\n- ...\n\nText:\n${currentOutput}`)
+            currentOutput = await askClaude(`Extract tasks from the following text. STRICT RULES:\n- Do NOT invent information\n- If no completed tasks, write "None"\n- Keep answers short and structured\n\nReturn EXACTLY in this format:\n\nCompleted Tasks:\n- ...\n\nPending Tasks:\n- ...\n\nOpen Questions:\n- ...\n\nText:\n${currentOutput}`)
           } else {
             // unknown action - note and skip
             resItem.unknownAction = true

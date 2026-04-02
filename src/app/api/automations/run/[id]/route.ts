@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id?: st
       } else if (action === 'generate_reply') {
         currentOutput = await askClaude(`Generate a reply for this:\n\n${currentOutput}`)
       } else if (action === 'extract_tasks') {
-        currentOutput = await askClaude(`Extract tasks from the following text. Return output in this EXACT format:\n\nCompleted Tasks:\n- ...\n\nPending Tasks:\n- ...\n\nOpen Questions:\n- ...\n\nText:\n${currentOutput}`)
+        currentOutput = await askClaude(`Extract tasks from the following text. STRICT RULES:\n- Do NOT invent information\n- If no completed tasks, write "None"\n- Keep answers short and structured\n\nReturn EXACTLY in this format:\n\nCompleted Tasks:\n- ...\n\nPending Tasks:\n- ...\n\nOpen Questions:\n- ...\n\nText:\n${currentOutput}`)
       } else {
         results.push({ action, skipped: true })
         continue

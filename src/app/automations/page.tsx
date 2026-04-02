@@ -35,6 +35,8 @@ export default function AutomationsPage() {
   const [actions, setActions] = useState<string[]>([])
   const [automations, setAutomations] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
+  const [input, setInput] = useState("")
+  const [loadingId, setLoadingId] = useState<string | null>(null)
 
   async function createAutomation() {
 
@@ -68,7 +70,11 @@ export default function AutomationsPage() {
 
   async function runAutomations() {
     try {
-      const res = await fetch("/api/automations/run", { method: "POST" })
+      const res = await fetch("/api/automations/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input })
+      })
       const data = await res.json().catch(()=>null)
       if (data?.success) {
         toast.success(`Automations executed — ${data.logsCreated ?? 0} logs`)
@@ -97,11 +103,20 @@ export default function AutomationsPage() {
   }
 
   async function runSingle(id: string) {
+    if (!input) {
+      toast.error('Paste input before running')
+      return
+    }
     try {
-      const res = await fetch(`/api/automations/run/${id}`, { method: 'POST' })
+      setLoadingId(id)
+      const res = await fetch(`/api/automations/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, automationId: id })
+      })
       const data = await res.json().catch(()=>null)
       if (data?.success) {
-        toast.success('Automation run — saved log')
+        toast.success('Automation executed')
         fetchLogs()
       } else {
         toast.error(data?.error || 'Failed to run automation')
@@ -110,6 +125,8 @@ export default function AutomationsPage() {
     } catch (err) {
       toast.error('Failed to run automation')
       console.error(err)
+    } finally {
+      setLoadingId(null)
     }
   }
 
@@ -231,6 +248,8 @@ export default function AutomationsPage() {
     return <div className="text-sm text-gray-800">{elems}</div>
   }
 
+  const grouped = groupedLogs()
+
   return (
 
     <div className="p-6 space-y-6 max-w-2xl mx-auto">
@@ -279,6 +298,8 @@ export default function AutomationsPage() {
         </div>
       </div>
 
+      <textarea placeholder="Paste email or message here..." value={input} onChange={(e)=>setInput(e.target.value)} className="w-full border p-2 rounded" />
+
       <div className="flex gap-2">
         <Button onClick={createAutomation}>
           Create
@@ -311,43 +332,32 @@ export default function AutomationsPage() {
                 <div className="flex flex-col items-end ml-4">
                   <div className="text-xs text-gray-500">{new Date(a.createdAt).toLocaleString()}</div>
                   <div className="flex gap-2 mt-2">
-                    <Button onClick={() => runSingle(a.id)}>Run</Button>
+                    <Button variant="secondary" disabled={!input || loadingId === a.id} onClick={() => runSingle(a.id)}>
+                      {loadingId === a.id ? 'Running...' : 'Run'}
+                    </Button>
                     <Button variant="ghost" onClick={() => deleteAutomation(a.id)}>Delete</Button>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-3">
-                <div className="text-sm font-semibold">Logs</div>
-                <div className="mt-2">
-                  {Object.entries(groupedLogs()).length === 0 && <div className="text-sm text-gray-500">No logs yet</div>}
-                  {groupedLogs()[a.id]?.map((log: any) => (
-                    <div key={log.id} className="border p-2 mt-2 rounded">
-                      <p className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString()}</p>
-                      <div className="mt-1">{renderStructured(log.output)}</div>
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-semibold">Logs</p>
+                {(!grouped[a.id] || grouped[a.id].length === 0) && (
+                  <p className="text-gray-500 text-sm">No logs yet</p>
+                )}
+                {grouped[a.id]?.map((log: any) => (
+                  <div key={log.id} className="bg-gray-50 p-2 rounded">
+                    <p className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString()}</p>
+                    <pre className="whitespace-pre-wrap text-sm mt-1">{log.output}</pre>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="pt-6">
-        <h2 className="text-lg font-semibold mb-3">Automation Logs</h2>
-        {logs.length === 0 && <div className="text-sm text-gray-500">No logs yet</div>}
-        <ul className="grid gap-3 mt-2">
-          {logs.map((l) => (
-            <li key={l.id} className="p-4 border rounded-md">
-              <div className="text-sm text-gray-500">Automation: {l.automationId} • {new Date(l.createdAt).toLocaleString()}</div>
-              <div className="mt-2">
-                {renderStructured(l.output)}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+      
 
     </div>
 
