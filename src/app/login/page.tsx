@@ -12,26 +12,31 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
 
   // 👇 PUT FUNCTION HERE
   async function login() {
-
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email,
-        password
+    setLoading(true)
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
       })
-    })
 
-    if (res.ok) {
-      router.push("/dashboard")
-    } else {
-      const data = await res.json().catch(()=>({ error: 'Login failed' }))
-      alert(data.error || 'Login failed')
+      const data = await res.json().catch(() => ({ success: false, error: 'Login failed' }))
+
+      if (data && data.success) {
+        router.push("/dashboard")
+      } else {
+        alert(data?.error || 'Login failed')
+      }
+    } catch (err) {
+      alert('Network error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -57,8 +62,9 @@ export default function LoginPage() {
         <Button
           onClick={login}
           className="w-full"
+          disabled={loading}
         >
-          Login
+          {loading ? 'Logging in…' : 'Login'}
         </Button>
 
         <div className="text-center text-sm text-gray-600">
