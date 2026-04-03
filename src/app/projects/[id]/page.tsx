@@ -206,8 +206,11 @@ export default function TasksPage() {
             <div key={log.id} className="text-sm border-b py-3">
               <div className="flex items-baseline justify-between">
                 <p>
-                  <span className="font-medium">{log.user?.email || 'system'}</span>
-                  <span className="ml-2 text-gray-700">{log.action || 'updated'}</span>
+                  <span className="font-medium">{log.user?.email || 'system'}</span>{' '}
+                  {log.action === "TASK_CREATED" && "created a task"}
+                  {log.action === "TASK_ASSIGNED" && (`assigned task (${log.details})`)}
+                  {log.action === "STATUS_CHANGED" && (`changed status (${log.details})`)}
+                  {log.action === "DESCRIPTION_UPDATED" && "updated description"}
                 </p>
                 <p className="text-xs text-gray-400">{new Date(log.createdAt).toLocaleString()}</p>
               </div>

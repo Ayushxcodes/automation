@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     try {
       await (prisma as any).activityLog.create({
         data: {
-          action: "STATUS_CHANGE",
+          action: "STATUS_CHANGED",
           details: `${oldStatus} → ${status}`,
           userId: user.id,
           taskId: task.id
