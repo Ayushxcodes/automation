@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
 import Calendar from "react-calendar"
 import "react-calendar/dist/Calendar.css"
@@ -56,6 +57,15 @@ export default function CalendarPage() {
         <div className="w-full h-full max-w-none overflow-auto">
           <div className="h-full w-full" style={{ width: '100%' }}>
             <div className="w-full h-full" style={{ maxWidth: '100%' }}>
+              {/* View switch: Monthly / Weekly */}
+              <div className="p-3 flex justify-end">
+                <Link
+                  href={id ? `/projects/${id}/calendar/weekly` : '#'}
+                  className="px-3 py-1 border rounded text-sm bg-white"
+                >
+                  Weekly view
+                </Link>
+              </div>
               <Calendar
                 className="w-full h-full"
                 style={{ width: '100%', maxWidth: 'none', height: '100%' }}
