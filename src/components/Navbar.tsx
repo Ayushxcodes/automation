@@ -7,6 +7,8 @@ import { usePathname, useRouter } from "next/navigation"
 export default function Navbar(){
   const [user, setUser] = useState<{id:number,email:string}|null>(null)
   const pathname = usePathname()
+  const parts = pathname?.split('/').filter(Boolean) || []
+  const projectId = parts[0] === 'projects' && parts[1] ? parts[1] : null
 
 
   useEffect(()=>{
@@ -34,6 +36,11 @@ export default function Navbar(){
           <nav className="hidden md:flex gap-3 text-sm">
             <Link href="/dashboard">Dashboard</Link>
             <Link href="/integrations">Integrations</Link>
+            {projectId ? (
+              <Link href={`/projects/${projectId}/calendar`}>Calendar</Link>
+            ) : (
+              <Link href="/projects">Projects</Link>
+            )}
           </nav>
         ) : null}
       </div>

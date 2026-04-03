@@ -23,6 +23,7 @@ export default async function DashboardLayout({
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/integrations">Integrations</Link>
           <Link href="/automations">Automations</Link>
+          <Link href="/projects">Projects</Link>
         </nav>
 
       </aside>
