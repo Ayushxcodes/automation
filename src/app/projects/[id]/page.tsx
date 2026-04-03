@@ -14,6 +14,9 @@ export default function TasksPage() {
   const [users, setUsers] = useState<any[]>([])
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [assignedToId, setAssignedToId] = useState<string | undefined>(undefined)
+  const [logs, setLogs] = useState<any[]>([])
+  const [selectedTaskId, setSelectedTaskId] = useState("")
+  const [logsLoading, setLogsLoading] = useState(false)
 
   // 🔹 Fetch tasks
   async function fetchTasks() {
@@ -69,6 +72,37 @@ export default function TasksPage() {
       fetchTasks()
     } else {
       toast.error(data.error || "Update failed")
+    }
+  }
+
+  // 🔹 Fetch logs for a task
+  async function fetchLogs(taskId: string) {
+    // toggle: close if already open
+    if (selectedTaskId === taskId) {
+      setSelectedTaskId("")
+      setLogs([])
+      return
+    }
+
+    setLogsLoading(true)
+    try {
+      const res = await fetch(`/api/tasks/logs?taskId=${taskId}`)
+      const data = await res.json()
+      // eslint-disable-next-line no-console
+      console.log("logs response:", data)
+      if (data.success) {
+        setLogs(data.logs)
+        setSelectedTaskId(taskId)
+      } else {
+        setLogs([])
+        setSelectedTaskId("")
+      }
+    } catch (e) {
+      // keep UI stable
+      setLogs([])
+      setSelectedTaskId("")
+    } finally {
+      setLogsLoading(false)
     }
   }
 
@@ -146,20 +180,49 @@ export default function TasksPage() {
       {/* 🔥 Kanban Columns */}
       <div className="grid grid-cols-3 gap-4">
 
-        <Column title="Todo" tasks={todo} color="bg-red-100" onStatusChange={updateStatus} currentUser={currentUser} />
+        <Column title="Todo" tasks={todo} color="bg-red-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
 
-        <Column title="In Progress" tasks={inProgress} color="bg-yellow-100" onStatusChange={updateStatus} currentUser={currentUser} />
+        <Column title="In Progress" tasks={inProgress} color="bg-yellow-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
 
-        <Column title="Done" tasks={done} color="bg-green-100" onStatusChange={updateStatus} currentUser={currentUser} />
+        <Column title="Done" tasks={done} color="bg-green-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
 
       </div>
+
+      {selectedTaskId && (
+        <div className="mt-6 p-4 border rounded bg-gray-50">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold mb-2">Activity Logs ({logs.length})</h2>
+            <div className="flex items-center gap-2">
+              {logsLoading && <div className="h-4 w-4 border-2 border-gray-300 border-t-black rounded-full animate-spin" />}
+              <button onClick={()=>{ setSelectedTaskId(""); setLogs([]) }} className="text-xs text-gray-600 px-2 py-1 border rounded hover:bg-gray-100">Close</button>
+            </div>
+          </div>
+
+          {logs.length === 0 && !logsLoading && (
+            <p className="text-sm text-gray-500">No logs for this task</p>
+          )}
+
+          {logs.map((log)=> (
+            <div key={log.id} className="text-sm border-b py-3">
+              <div className="flex items-baseline justify-between">
+                <p>
+                  <span className="font-medium">{log.user?.email || 'system'}</span>
+                  <span className="ml-2 text-gray-700">{log.action || 'updated'}</span>
+                </p>
+                <p className="text-xs text-gray-400">{new Date(log.createdAt).toLocaleString()}</p>
+              </div>
+              <pre className="mt-2 bg-white p-2 rounded text-xs overflow-auto whitespace-pre-wrap">{log.details}</pre>
+            </div>
+          ))}
+        </div>
+      )}
 
     </div>
   )
 }
 
 // 🔹 Column Component (Excel-like styling)
-function Column({ title, tasks, color, onStatusChange, currentUser }: any) {
+function Column({ title, tasks, color, onStatusChange, currentUser, fetchLogs }: any) {
 
   return (
 
@@ -172,14 +235,14 @@ function Column({ title, tasks, color, onStatusChange, currentUser }: any) {
       )}
 
       {tasks.map((t:any, idx:number)=>(
-        <TaskCard key={t.id} task={{...t, row: idx + 1}} onStatusChange={onStatusChange} currentUser={currentUser} />
+        <TaskCard key={t.id} task={{...t, row: idx + 1}} onStatusChange={onStatusChange} currentUser={currentUser} fetchLogs={fetchLogs} />
       ))}
 
     </div>
   )
 }
 
-function TaskCard({ task, currentUser, onStatusChange }: any) {
+function TaskCard({ task, currentUser, onStatusChange, fetchLogs, logsLoading, selectedTaskId }: any) {
   const canEdit = currentUser && (currentUser.role === "admin" || task.assignedToId === currentUser.id)
 
   async function handleChange(e: any) {
@@ -206,6 +269,22 @@ function TaskCard({ task, currentUser, onStatusChange }: any) {
         <option value="in_progress">In Progress</option>
         <option value="done">Done</option>
       </select>
+      <div>
+        {(() => {
+          const isOpen = selectedTaskId === task.id
+          return (
+            <button
+              onClick={()=>fetchLogs?.(task.id)}
+              className="inline-flex items-center gap-2 px-2 py-1 text-xs rounded border text-blue-600 hover:bg-blue-50"
+            >
+              {logsLoading && isOpen ? (
+                <div className="h-3 w-3 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
+              ) : null}
+              {isOpen ? 'Hide Logs' : 'View Logs'}
+            </button>
+          )
+        })()}
+      </div>
       {!canEdit && (
         <p className="text-xs text-red-500"> You are not allowed to update this task </p>
       )}

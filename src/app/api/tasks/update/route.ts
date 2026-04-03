@@ -51,11 +51,32 @@ export async function POST(req: Request) {
       })
     }
 
+    // Store old status
+    const oldStatus = task.status
+
     // ✅ Update allowed
     const updated = await prisma.task.update({
       where: { id: taskId },
       data: { status }
     })
+
+    // Log activity using the Prisma client model directly; swallow errors so update still succeeds
+    try {
+      await (prisma as any).activityLog.create({
+        data: {
+          action: "STATUS_CHANGE",
+          details: `${oldStatus} → ${status}`,
+          userId: user.id,
+          taskId: task.id
+        }
+      })
+    } catch (e) {
+      // ignore logging failures in production flow, but preserve them during development
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.error('Failed to write activity log:', e)
+      }
+    }
 
     return NextResponse.json({
       success:true,
