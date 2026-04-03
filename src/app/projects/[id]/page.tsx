@@ -10,10 +10,17 @@ export default function TasksPage() {
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [format, setFormat] = useState("")
+  const [platform, setPlatform] = useState("")
+  const [topic, setTopic] = useState("")
+  const [publishDate, setPublishDate] = useState<string | undefined>(undefined)
   const [tasks, setTasks] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [assignedToId, setAssignedToId] = useState<string | undefined>(undefined)
+  const [platformFilter, setPlatformFilter] = useState("")
+  const [topicFilter, setTopicFilter] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
   const [logs, setLogs] = useState<any[]>([])
   const [selectedTaskId, setSelectedTaskId] = useState("")
   const [logsLoading, setLogsLoading] = useState(false)
@@ -40,7 +47,11 @@ export default function TasksPage() {
         title,
         description,
         projectId: id,
-        assignedToId
+        assignedToId,
+        format,
+        platform,
+        topic,
+        publishDate
       })
     })
 
@@ -51,6 +62,10 @@ export default function TasksPage() {
       setTitle("")
       setDescription("")
       setAssignedToId(undefined)
+      setFormat("")
+      setPlatform("")
+      setTopic("")
+      setPublishDate(undefined)
       fetchTasks()
     } else {
       toast.error("Failed")
@@ -130,10 +145,12 @@ export default function TasksPage() {
     fetchMe()
   },[])
 
-  // 🔥 Group tasks
-  const todo = tasks.filter(t => t.status === "todo")
-  const inProgress = tasks.filter(t => t.status === "in_progress")
-  const done = tasks.filter(t => t.status === "done")
+  // 🔥 Content flow groups
+  const idea = tasks.filter(t => t.status === "idea" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
+  const script = tasks.filter(t => t.status === "script" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
+  const filmed = tasks.filter(t => t.status === "filmed" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
+  const edited = tasks.filter(t => t.status === "edited" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
+  const published = tasks.filter(t => t.status === "published" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
 
   return (
 
@@ -160,6 +177,34 @@ export default function TasksPage() {
             className="min-w-0 bg-white border border-gray-200 h-9 text-sm px-2 rounded"
           />
 
+          <input
+            placeholder="Format (reel/post/video)"
+            value={format}
+            onChange={(e)=>setFormat((e as any).target.value)}
+            className="min-w-0 bg-white border border-gray-200 h-9 text-sm px-2 rounded"
+          />
+
+          <input
+            placeholder="Platform (yt/ig/li/tw)"
+            value={platform}
+            onChange={(e)=>setPlatform((e as any).target.value)}
+            className="min-w-0 bg-white border border-gray-200 h-9 text-sm px-2 rounded"
+          />
+
+          <input
+            placeholder="Topic"
+            value={topic}
+            onChange={(e)=>setTopic((e as any).target.value)}
+            className="min-w-0 bg-white border border-gray-200 h-9 text-sm px-2 rounded"
+          />
+
+          <input
+            type="date"
+            value={publishDate ?? ""}
+            onChange={(e)=>setPublishDate((e as any).target.value || undefined)}
+            className="min-w-0 bg-white border border-gray-200 h-9 text-sm px-2 rounded"
+          />
+
           <select
             value={assignedToId ?? ""}
             onChange={(e)=>setAssignedToId((e as any).target.value || undefined)}
@@ -177,14 +222,38 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* 🔥 Kanban Columns */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* 🔥 Filters */}
+      <div className="flex items-center gap-2">
+        <select value={platformFilter} onChange={(e)=>setPlatformFilter((e as any).target.value)} className="text-sm border rounded px-2 py-1">
+          <option value="">Platform (all)</option>
+          {[...new Set(tasks.map(t=>t.platform).filter(Boolean))].map(p=> <option key={p} value={p}>{p}</option>)}
+        </select>
+        <select value={topicFilter} onChange={(e)=>setTopicFilter((e as any).target.value)} className="text-sm border rounded px-2 py-1">
+          <option value="">Topic (all)</option>
+          {[...new Set(tasks.map(t=>t.topic).filter(Boolean))].map(tpc=> <option key={tpc} value={tpc}>{tpc}</option>)}
+        </select>
+        <select value={statusFilter} onChange={(e)=>setStatusFilter((e as any).target.value)} className="text-sm border rounded px-2 py-1">
+          <option value="">Status (all)</option>
+          <option value="idea">Idea</option>
+          <option value="script">Script</option>
+          <option value="filmed">Filmed</option>
+          <option value="edited">Edited</option>
+          <option value="published">Published</option>
+        </select>
+      </div>
 
-        <Column title="Todo" tasks={todo} color="bg-red-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
+      {/* 🔥 Kanban Columns (Content Flow) */}
+      <div className="grid grid-cols-5 gap-4">
 
-        <Column title="In Progress" tasks={inProgress} color="bg-yellow-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
+        <Column title="Idea" tasks={idea} color="bg-red-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
 
-        <Column title="Done" tasks={done} color="bg-green-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
+        <Column title="Script" tasks={script} color="bg-yellow-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
+
+        <Column title="Filmed" tasks={filmed} color="bg-indigo-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
+
+        <Column title="Edited" tasks={edited} color="bg-orange-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
+
+        <Column title="Published" tasks={published} color="bg-green-100" onStatusChange={updateStatus} currentUser={currentUser} fetchLogs={fetchLogs} logsLoading={logsLoading} selectedTaskId={selectedTaskId} />
 
       </div>
 
@@ -268,9 +337,11 @@ function TaskCard({ task, currentUser, onStatusChange, fetchLogs, logsLoading, s
         <p className="text-xs text-blue-600"> Assigned to: {task.assignedTo.email} </p>
       )}
       <select value={task.status} disabled={!canEdit} onChange={handleChange} className={`text-xs border rounded px-2 py-1 ${!canEdit ? "opacity-50 cursor-not-allowed" : ""}`} >
-        <option value="todo">Todo</option>
-        <option value="in_progress">In Progress</option>
-        <option value="done">Done</option>
+            <option value="idea">Idea</option>
+            <option value="script">Script</option>
+            <option value="filmed">Filmed</option>
+            <option value="edited">Edited</option>
+            <option value="published">Published</option>
       </select>
       <div>
         {(() => {
@@ -291,6 +362,13 @@ function TaskCard({ task, currentUser, onStatusChange, fetchLogs, logsLoading, s
       {!canEdit && (
         <p className="text-xs text-red-500"> You are not allowed to update this task </p>
       )}
+      {/* Metrics */}
+      <div className="flex gap-3 mt-2">
+        <p className="text-xs">YT: {task.ytViews ?? 0}</p>
+        <p className="text-xs">IG: {task.igReach ?? 0}</p>
+        <p className="text-xs">LI: {task.liImpressions ?? 0}</p>
+        <p className="text-xs">TW: {task.twImpressions ?? 0}</p>
+      </div>
     </div>
   )
 }

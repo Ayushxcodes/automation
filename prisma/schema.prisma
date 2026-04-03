@@ -115,14 +115,26 @@ model Task {
 
   status String @default("todo")
 
+  // Content metadata
+  format      String?   // reel | post | thread | video
+  platform    String?   // yt | ig | li | tw
+  topic       String?   // personal brand | ai | etc
+  publishDate DateTime?
+
+  // Metrics
+  ytViews        Int? @default(0)
+  igReach        Int? @default(0)
+  liImpressions  Int? @default(0)
+  twImpressions  Int? @default(0)
+
   projectId String
   project Project @relation(fields: [projectId], references: [id])
 
-  // 🔥 NEW
   assignedToId String?
   assignedTo User? @relation(fields: [assignedToId], references: [id])
 
-  logs ActivityLog[]
+  logs  ActivityLog[]
+  briefs Brief[]        // 🔥 opposite relation for Brief.task
 
   createdAt DateTime @default(now())
 }
@@ -139,6 +151,22 @@ model ActivityLog {
 
   taskId String?
   task Task? @relation(fields: [taskId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Brief {
+
+  id String @id @default(cuid())
+
+  taskId String @unique
+  task Task @relation(fields: [taskId], references: [id])
+
+  hook String?
+  angle String?
+  message String?
+  visuals String?
+  script String?
 
   createdAt DateTime @default(now())
 }

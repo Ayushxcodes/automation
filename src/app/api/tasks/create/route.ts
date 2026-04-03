@@ -7,6 +7,16 @@ export async function POST(req: Request) {
 
   try {
 
+    // log incoming request for debugging
+    try {
+      const clone = req.clone()
+      const bodyForLog = await clone.text()
+      // eslint-disable-next-line no-console
+      console.log('api/tasks/create payload:', bodyForLog)
+    } catch (e) {
+      // ignore logging failures
+    }
+
     const cookieStore = await cookies()
     const token = cookieStore.get("token")?.value
 
@@ -16,7 +26,7 @@ export async function POST(req: Request) {
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!)
 
-    const { title, description, projectId, assignedToId } = await req.json()
+    const { title, description, projectId, assignedToId, format, platform, topic, publishDate } = await req.json()
 
     if (!title || !projectId) {
       return NextResponse.json({ success:false, error:"Missing fields" })
@@ -27,7 +37,12 @@ export async function POST(req: Request) {
         title,
         description,
         projectId,
-        assignedToId: assignedToId || undefined
+        status: "idea",
+        assignedToId: assignedToId || undefined,
+        format: format || undefined,
+        platform: platform || undefined,
+        topic: topic || undefined,
+        publishDate: publishDate ? new Date(publishDate) : undefined
       }
     })
 
@@ -65,8 +80,10 @@ export async function POST(req: Request) {
       task
     })
 
-  } catch {
-    return NextResponse.json({ success:false })
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Error in /api/tasks/create:', e)
+    return NextResponse.json({ success:false, error: String(e) })
   }
 
 }
