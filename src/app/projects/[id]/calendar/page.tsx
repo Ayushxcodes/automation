@@ -99,9 +99,25 @@ export default function CalendarPage() {
                   setSelectedDate(value)
                   const x = e?.clientX ?? window.innerWidth/2
                   const y = e?.clientY ?? window.innerHeight/2
-                  setPopupPos({ x, y })
-                  setShowPopup(true)
-                  setShowModal(true)
+
+                  const hasTask = tasks.some(t => {
+                    if (!t.publishDate) return false
+                    const d = new Date(t.publishDate)
+                    return (
+                      d.getDate() === value.getDate() &&
+                      d.getMonth() === value.getMonth() &&
+                      d.getFullYear() === value.getFullYear()
+                    )
+                  })
+
+                  if (hasTask) {
+                    setPopupPos({ x, y })
+                    setShowPopup(true)
+                    setShowModal(false)
+                  } else {
+                    setShowPopup(false)
+                    setShowModal(true)
+                  }
                 }}
                 value={selectedDate}
                 tileContent={({ date }) => {
@@ -130,7 +146,15 @@ export default function CalendarPage() {
             className="fixed z-50 w-80 bg-white border rounded shadow-lg p-3"
             style={{ left: popupPos.x, top: popupPos.y, transform: 'translate(-50%, 8px)' }}
           >
-            <h3 className="font-semibold mb-2">Tasks on {selectedDate.toDateString()}</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Tasks on {selectedDate.toDateString()}</h3>
+              <button
+                onClick={() => { setShowModal(true); setShowPopup(false) }}
+                className="text-sm px-2 py-1 border rounded"
+              >
+                Add Task
+              </button>
+            </div>
             {filtered.length === 0 ? (
               <p className="text-gray-500">No content scheduled</p>
             ) : (

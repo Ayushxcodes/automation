@@ -8,6 +8,7 @@ export default function WeeklyView() {
   const params = useParams()
   const id = params?.id
   const [tasks, setTasks] = useState<any[]>([])
+  const [draggedTask, setDraggedTask] = useState<any>(null)
   const [currentDate, setCurrentDate] = useState(new Date())
 
   async function fetchTasks() {
@@ -64,6 +65,29 @@ export default function WeeklyView() {
     setCurrentDate(d)
   }
 
+  async function handleDrop(date: Date) {
+    if (!draggedTask) return
+    try {
+      const res = await fetch("/api/tasks/update", {
+        method: "POST",
+        credentials: 'same-origin',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: draggedTask.id, publishDate: date.toISOString() })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDraggedTask(null)
+        fetchTasks()
+      } else {
+        // eslint-disable-next-line no-console
+        console.error('Failed to move task', data)
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Error while dropping task', e)
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -91,7 +115,14 @@ export default function WeeklyView() {
         {weekDates.map((date, i)=>{
           const dayTasks = getTasksForDate(date)
           return (
-            <div key={i} className="border rounded p-2 min-h-[200px] bg-gray-50">
+            <div
+              key={i}
+              onDragOver={(e)=>e.preventDefault()}
+              onDragEnter={(e)=>e.currentTarget.classList.add("bg-blue-100")}
+              onDragLeave={(e)=>e.currentTarget.classList.remove("bg-blue-100")}
+              onDrop={(e)=>{ e.currentTarget.classList.remove("bg-blue-100"); handleDrop(date) }}
+              className="border rounded p-2 min-h-[200px] bg-gray-50 hover:bg-gray-100"
+            >
               <p className="text-sm font-semibold"> {date.toDateString().slice(0,10)} </p>
 
               <div className="space-y-2 mt-2">
@@ -100,7 +131,7 @@ export default function WeeklyView() {
                 )}
 
                 {dayTasks.map(t=>(
-                  <div key={t.id} className="bg-white p-2 rounded shadow text-xs">
+                  <div key={t.id} draggable onDragStart={()=>setDraggedTask(t)} onDragEnd={()=>setDraggedTask(null)} className={`bg-white p-2 rounded shadow text-xs cursor-move ${draggedTask?.id === t.id ? 'opacity-70 border-2 border-dashed' : ''}`}>
                     <p className="font-medium">{t.title}</p>
                     <p className="text-gray-500"> {t.platform} • {t.format} </p>
                     <p className="text-[10px]"> {t.status} </p>

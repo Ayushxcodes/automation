@@ -25,25 +25,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ success:false })
     }
 
-    const { taskId, status } = await req.json()
+    const { taskId, status, publishDate } = await req.json()
 
-    if (!taskId || !status) {
+    if (!taskId) {
       return NextResponse.json({ success:false })
     }
 
-    // 🔥 Get task
+    // 🔥 Get task (include project for permission checks)
     const task = await prisma.task.findUnique({
-      where: { id: taskId }
+      where: { id: taskId },
+      include: { project: true }
     })
 
     if (!task) {
       return NextResponse.json({ success:false })
     }
 
-    // 🔒 PERMISSION CHECK
+    // 🔒 PERMISSION CHECK: allow if assigned, project owner, or admin
     if (
       task.assignedToId !== user.id &&
-      user.role !== "admin"
+      user.role !== "admin" &&
+      task.project?.userId !== user.id
     ) {
       return NextResponse.json({
         success:false,
@@ -57,21 +59,36 @@ export async function POST(req: Request) {
     // ✅ Update allowed
     const updated = await prisma.task.update({
       where: { id: taskId },
-      data: { status }
+      data: {
+        ...(status && { status }),
+        ...(publishDate && { publishDate: new Date(publishDate) })
+      }
     })
 
     // Log activity using the Prisma client model directly; swallow errors so update still succeeds
     try {
-      await (prisma as any).activityLog.create({
-        data: {
-          action: "STATUS_CHANGED",
-          details: `${oldStatus} → ${status}`,
-          userId: user.id,
-          taskId: task.id
-        }
-      })
+      if (status) {
+        await (prisma as any).activityLog.create({
+          data: {
+            action: "STATUS_CHANGED",
+            details: `${oldStatus} → ${status}`,
+            userId: user.id,
+            taskId: task.id
+          }
+        })
+      }
+
+      if (publishDate) {
+        await (prisma as any).activityLog.create({
+          data: {
+            action: "DATE_CHANGED",
+            details: `Moved to ${new Date(publishDate).toDateString()}`,
+            userId: user.id,
+            taskId: task.id
+          }
+        })
+      }
     } catch (e) {
-      // ignore logging failures in production flow, but preserve them during development
       if (process.env.NODE_ENV !== 'production') {
         // eslint-disable-next-line no-console
         console.error('Failed to write activity log:', e)

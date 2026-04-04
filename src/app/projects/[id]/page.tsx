@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 export default function TasksPage() {
@@ -90,6 +90,27 @@ export default function TasksPage() {
     }
   }
 
+  // 🔹 Delete a task
+  async function deleteTask(taskId: string) {
+    if (!confirm("Delete this task? This cannot be undone.")) return
+    try {
+      const res = await fetch("/api/tasks/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Task deleted")
+        fetchTasks()
+      } else {
+        toast.error(data.error || "Delete failed")
+      }
+    } catch (e) {
+      toast.error("Delete failed")
+    }
+  }
+
   // 🔹 Fetch logs for a task
   async function fetchLogs(taskId: string) {
     // toggle: close if already open
@@ -145,6 +166,28 @@ export default function TasksPage() {
     fetchMe()
   },[])
 
+  // 🔹 Run AI scheduler: assign publish dates to unscheduled tasks
+  async function runScheduler() {
+    try {
+      const res = await fetch("/api/ai/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: id })
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success(`Tasks scheduled: ${data.count}`)
+        fetchTasks()
+      } else {
+        toast.error(data.error || "Scheduling failed")
+      }
+    } catch (e) {
+      toast.error("Scheduling failed")
+    }
+  }
+
   // 🔥 Content flow groups
   const idea = tasks.filter(t => t.status === "idea" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
   const script = tasks.filter(t => t.status === "script" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
@@ -152,11 +195,39 @@ export default function TasksPage() {
   const edited = tasks.filter(t => t.status === "edited" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
   const published = tasks.filter(t => t.status === "published" && (platformFilter ? t.platform === platformFilter : true) && (topicFilter ? t.topic === topicFilter : true) && (statusFilter ? t.status === statusFilter : true))
 
+  const router = useRouter()
+
+  async function deleteProject() {
+    if (!confirm("Delete this project and all its tasks? This cannot be undone.")) return
+    try {
+      const res = await fetch("/api/projects/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: id })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Project deleted")
+        router.push('/projects')
+      } else {
+        toast.error(data.error || "Delete failed")
+      }
+    } catch (e) {
+      toast.error("Delete failed")
+    }
+  }
+
   return (
 
     <div className="p-6 space-y-6">
 
-      <h1 className="text-xl font-bold">Tasks</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">Tasks</h1>
+        <div className="flex gap-2">
+          <button onClick={runScheduler} className="h-9 px-3 bg-black text-white rounded">Auto Schedule (AI)</button>
+          <button onClick={deleteProject} className="h-9 px-3 bg-red-600 text-white rounded">Delete Project</button>
+        </div>
+      </div>
 
       {/* 🔹 Create Task (toolbar styled like spreadsheet row) */}
       <div className="space-y-3 max-w-2xl">
@@ -333,6 +404,9 @@ function TaskCard({ task, currentUser, onStatusChange, fetchLogs, logsLoading, s
       {task.description && (
         <p className="text-sm text-gray-600">{task.description}</p>
       )}
+      {task.publishDate && (
+        <p className="text-xs text-gray-500">Scheduled: {new Date(task.publishDate).toLocaleString()}</p>
+      )}
       {task.assignedTo && (
         <p className="text-xs text-blue-600"> Assigned to: {task.assignedTo.email} </p>
       )}
@@ -359,6 +433,11 @@ function TaskCard({ task, currentUser, onStatusChange, fetchLogs, logsLoading, s
           )
         })()}
       </div>
+      {canEdit && (
+        <div className="mt-2">
+          <button onClick={()=>deleteTask(task.id)} className="text-xs px-2 py-1 rounded border text-red-600 hover:bg-red-50">Delete</button>
+        </div>
+      )}
       {!canEdit && (
         <p className="text-xs text-red-500"> You are not allowed to update this task </p>
       )}
