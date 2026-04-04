@@ -3,7 +3,11 @@
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 
-export default function BackButton() {
+type Props = {
+  global?: boolean
+}
+
+export default function BackButton({ global }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const [visible, setVisible] = useState(false)
@@ -20,11 +24,17 @@ export default function BackButton() {
   // Hide on dashboard pages
   if (pathname?.startsWith("/dashboard")) return null
 
+  // If this is the global layout instance, hide it on /ai so pages can render a sidebar back button instead
+  if (global && pathname?.startsWith("/ai")) return null
+
   if (!visible) return null
 
   // reposition on /projects so it doesn't overlap the page header
+  // For /ai we render in normal flow (sidebar) so use static positioning
   const positionClass = pathname?.startsWith("/projects")
     ? "absolute left-4 top-60"
+    : pathname?.startsWith("/ai")
+    ? "static"
     : "absolute left-4 top-4"
 
   return (

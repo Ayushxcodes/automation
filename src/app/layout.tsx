@@ -38,7 +38,7 @@ export default function RootLayout({
         <Toaster position="top-right" />
 
         <div className="relative flex-1">
-          <BackButton />
+          <BackButton global />
           <main>{children}</main>
         </div>
       </body>

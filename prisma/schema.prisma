@@ -170,3 +170,20 @@ model Brief {
 
   createdAt DateTime @default(now())
 }
+
+model Chat {
+  id        String   @id @default(cuid())
+  title     String?
+  userId    String
+  messages  Message[]
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  role      String   // user | assistant
+  content   String
+  createdAt DateTime @default(now())
+}
