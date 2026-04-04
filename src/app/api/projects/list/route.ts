@@ -16,9 +16,15 @@ export async function GET() {
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!)
 
+    const userId = decoded.userId
+
+    // return projects the user owns OR projects where the user is assigned to at least one task
     const projects = await prisma.project.findMany({
       where: {
-        userId: decoded.userId
+        OR: [
+          { userId },
+          { tasks: { some: { assignedToId: userId } } }
+        ]
       },
       orderBy: {
         createdAt: "desc"
