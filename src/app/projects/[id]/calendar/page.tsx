@@ -9,6 +9,10 @@ import "react-calendar/dist/Calendar.css"
 export default function CalendarPage() {
   const [tasks, setTasks] = useState<any[]>([])
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [showModal, setShowModal] = useState(false)
+  const [title, setTitle] = useState("")
+  const [platform, setPlatform] = useState("")
+  const [format, setFormat] = useState("")
   const [showPopup, setShowPopup] = useState(false)
   const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(null)
   const popupRef = useRef<HTMLDivElement | null>(null)
@@ -51,6 +55,28 @@ export default function CalendarPage() {
     )
   })
 
+  // Create task API
+  async function createTask() {
+    if (!title || !selectedDate || !id) return
+    try {
+      const res = await fetch('/api/tasks/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, projectId: id, publishDate: selectedDate, platform, format })
+      })
+      const data = await res.json()
+      if (data?.success) {
+        setShowModal(false)
+        setTitle("")
+        setPlatform("")
+        setFormat("")
+        fetchTasks()
+      }
+    } catch (err) {
+      console.error('createTask error', err)
+    }
+  }
+
   return (
     <div className="h-screen w-screen bg-gray-50">
       <div className="h-full w-full flex items-stretch justify-start p-0">
@@ -68,7 +94,6 @@ export default function CalendarPage() {
               </div>
               <Calendar
                 className="w-full h-full"
-                style={{ width: '100%', maxWidth: 'none', height: '100%' }}
                 onChange={(value:any)=>setSelectedDate(value)}
                 onClickDay={(value:any, e:any) => {
                   setSelectedDate(value)
@@ -76,6 +101,7 @@ export default function CalendarPage() {
                   const y = e?.clientY ?? window.innerHeight/2
                   setPopupPos({ x, y })
                   setShowPopup(true)
+                  setShowModal(true)
                 }}
                 value={selectedDate}
                 tileContent={({ date }) => {
@@ -118,6 +144,21 @@ export default function CalendarPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+        {/* Create Task Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl space-y-3 w-80">
+              <h2 className="font-semibold"> Create Task ({selectedDate?.toDateString()}) </h2>
+              <input placeholder="Title" value={title} onChange={(e)=>setTitle(e.target.value)} className="w-full border p-2 rounded" />
+              <input placeholder="Platform (yt/ig/li)" value={platform} onChange={(e)=>setPlatform(e.target.value)} className="w-full border p-2 rounded" />
+              <input placeholder="Format (reel/post/video)" value={format} onChange={(e)=>setFormat(e.target.value)} className="w-full border p-2 rounded" />
+              <div className="flex gap-2">
+                <button onClick={createTask} className="bg-black text-white px-3 py-1 rounded" > Create </button>
+                <button onClick={()=>setShowModal(false)} className="border px-3 py-1 rounded" > Cancel </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
