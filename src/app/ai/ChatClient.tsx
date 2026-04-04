@@ -113,11 +113,22 @@ export default function ChatClient() {
       body: JSON.stringify({ chatId: currentChat.id, role: "user", content: text }),
     })
 
-    // send to AI
+    // send to AI (include system tool-enabled prompt)
+    const systemPrompt = `You are an AI assistant managing content tasks. RULES:
++ NEVER ask for projectId
++ ALWAYS use provided projectId automatically
++ When user asks to create posts → create tasks using tools
++ Do NOT generate text posts unless explicitly asked
++ If user asks to "create posts" → create tasks, not content.`
+
+    // attempt to pick up project context from the page URL (query param `projectId`)
+    const currentProjectId = typeof window !== "undefined" ? new URL(window.location.href).searchParams.get("projectId") : null
+
+    // send to AI (pass system as top-level field and include projectId)
     const res = await fetch("/api/ai/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: toSend }),
+      body: JSON.stringify({ system: systemPrompt, messages: toSend, projectId: currentProjectId }),
     })
     const data = await res.json()
     const aiMsg = { role: "assistant", content: data.reply }
