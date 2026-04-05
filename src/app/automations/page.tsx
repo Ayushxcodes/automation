@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from 'sonner'
+import { Lightning, Mailbox, Chat, Robot, Play, Trash, Clock, Plus, Gear } from "@phosphor-icons/react"
 
 export default function AutomationsPage() {
 
@@ -311,139 +313,293 @@ export default function AutomationsPage() {
   const grouped = groupedLogs()
 
   return (
-
-    <div className="p-6 space-y-6 max-w-2xl mx-auto">
-
-      <h1 className="text-2xl font-bold">Create Automation</h1>
-
-      <div className="grid gap-2">
-        <label className="text-sm font-medium">Trigger</label>
-        <Select value={trigger} onValueChange={setTrigger}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select Trigger" />
-          </SelectTrigger>
-          <SelectContent>
-            {TRIGGERS.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
-                {t.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <label className="text-sm font-medium">Action (add steps)</label>
-        <Select onValueChange={(v: string) => {
-          if (!v) return
-          setActions((prev) => [...prev, v])
-        }}>
-          <SelectTrigger>
-            <SelectValue placeholder="Add Action" />
-          </SelectTrigger>
-          <SelectContent>
-            {ACTIONS.map((a) => (
-              <SelectItem key={a.value} value={a.value}>
-                {a.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="space-y-2 mt-2">
-          {actions.map((act, index) => (
-            <div key={index} className="flex items-center justify-between border p-2 rounded">
-              <div>Step {index + 1}: {actionLabels[act] ?? act}</div>
-              <Button variant="ghost" onClick={() => setActions(prev => prev.filter((_, i) => i !== index))}>Remove</Button>
+    <div className="min-h-screen bg-gray-50/50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Lightning className="w-6 h-6 text-blue-600" />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Automations</h1>
+              <p className="text-gray-600 text-sm">Create and manage automated workflows</p>
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
-      <textarea placeholder="Paste email or message here..." value={input} onChange={(e)=>setInput(e.target.value)} className="w-full border p-2 rounded" />
-
-      <div className="flex gap-2">
-        <Button onClick={createAutomation}>
-          Create
-        </Button>
-
-        <Button onClick={createEmail}>
-          Save Email
-        </Button>
-
-        <Button onClick={runAutomations}>
-          Run Automations
-        </Button>
-      </div>
-
-      <div className="pt-6">
-        <h2 className="text-lg font-semibold mb-3">Your Automations</h2>
-        {automations.length === 0 && <div className="text-sm text-gray-500">No automations yet</div>}
-        <div className="space-y-4 mt-2">
-          {automations.map((a) => (
-            <div key={a.id} className="p-4 border rounded-md">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-medium">{triggerLabels[a.trigger] ?? a.trigger}</div>
-                  <div className="text-sm text-gray-600">
-                    {Array.isArray(a.actions) ? (
-                      a.actions.map((act: string, i: number) => (
-                        <div key={i}>→ {actionLabels[act] ?? act}</div>
-                      ))
-                    ) : (
-                      <div>→ {actionLabels[(a as any).action] ?? (a as any).action}</div>
-                    )}
-                  </div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Create Automation */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Create New Automation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Trigger Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Trigger</label>
+                  <Select value={trigger} onValueChange={setTrigger}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Trigger" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TRIGGERS.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          <div className="flex items-center gap-2">
+                            {t.value === 'new_email' ? <Mailbox className="w-4 h-4" /> : <Chat className="w-4 h-4" />}
+                            {t.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex flex-col items-end ml-4">
-                  <div className="text-xs text-gray-500">{new Date(a.createdAt).toLocaleString()}</div>
-                  <div className="flex gap-2 mt-2">
-                    <Button variant="secondary" disabled={!input || loadingId === a.id} onClick={() => runSingle(a.id)}>
-                      {loadingId === a.id ? 'Running...' : 'Run'}
-                    </Button>
-                    <Button variant="ghost" onClick={() => deleteAutomation(a.id)}>Delete</Button>
-                  </div>
-                </div>
-              </div>
 
-              <div className="mt-3 space-y-2">
-                <p className="text-sm font-semibold">Logs</p>
-                {(!grouped[a.id] || grouped[a.id].length === 0) && (
-                  <p className="text-gray-500 text-sm">No logs yet</p>
+                {/* Actions Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Actions</label>
+                  <Select onValueChange={(v: string) => {
+                    if (!v) return
+                    setActions((prev) => [...prev, v])
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Add Action" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACTIONS.map((a) => (
+                        <SelectItem key={a.value} value={a.value}>
+                          <div className="flex items-center gap-2">
+                            <Robot className="w-4 h-4" />
+                            {a.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Selected Actions */}
+                {actions.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Selected Actions</label>
+                    <div className="space-y-2">
+                      {actions.map((act, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-600">Step {index + 1}:</span>
+                            <span className="text-sm">{actionLabels[act] ?? act}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setActions(prev => prev.filter((_, i) => i !== index))}
+                          >
+                            <Trash className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
-                {grouped[a.id]?.map((log: any) => (
-                  <div key={log.id} className="bg-gray-50 p-2 rounded">
-                    <p className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString()}</p>
-                    <pre className="whitespace-pre-wrap text-sm mt-1">{log.output}</pre>
+
+                {/* Input Textarea */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Test Input</label>
+                  <textarea
+                    placeholder="Paste email or message content here to test your automation..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    className="w-full min-h-[120px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button onClick={createAutomation} className="flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Automation
+                  </Button>
+                  <Button variant="outline" onClick={createEmail} className="flex items-center gap-2">
+                    <Mailbox className="w-4 h-4" />
+                    Save as Email
+                  </Button>
+                  <Button variant="secondary" onClick={runAutomations} className="flex items-center gap-2">
+                    <Play className="w-4 h-4" />
+                    Test All
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Your Automations */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gear className="w-5 h-5" />
+                  Your Automations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {automations.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Robot className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No automations created yet</p>
+                    <p className="text-sm">Create your first automation above</p>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
+                ) : (
+                  <div className="space-y-4">
+                    {automations.map((a) => (
+                      <div key={a.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              {a.trigger === 'new_email' ? <Mailbox className="w-4 h-4 text-blue-500" /> : <Chat className="w-4 h-4 text-green-500" />}
+                              <span className="font-medium">{triggerLabels[a.trigger] ?? a.trigger}</span>
+                            </div>
+                            <div className="space-y-1">
+                              {Array.isArray(a.actions) ? (
+                                a.actions.map((act: string, i: number) => (
+                                  <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                                    {actionLabels[act] ?? act}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                                  {actionLabels[(a as any).action] ?? (a as any).action}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <div className="text-xs text-gray-500">
+                              {new Date(a.createdAt).toLocaleDateString()}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!input || loadingId === a.id}
+                                onClick={() => runSingle(a.id)}
+                              >
+                                {loadingId === a.id ? (
+                                  <>
+                                    <div className="w-3 h-3 border border-gray-300 border-t-gray-600 rounded-full animate-spin mr-2"></div>
+                                    Running...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="w-3 h-3 mr-1" />
+                                    Test
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteAutomation(a.id)}
+                              >
+                                <Trash className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Logs */}
+                        <div className="border-t pt-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Clock className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm font-medium text-gray-700">Recent Logs</span>
+                          </div>
+                          {(!grouped[a.id] || grouped[a.id].length === 0) ? (
+                            <p className="text-sm text-gray-500">No execution logs yet</p>
+                          ) : (
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {grouped[a.id]?.slice(0, 3).map((log: any) => (
+                                <div key={log.id} className="bg-gray-50 p-3 rounded text-sm">
+                                  <div className="text-xs text-gray-500 mb-1">
+                                    {new Date(log.createdAt).toLocaleString()}
+                                  </div>
+                                  <div className="whitespace-pre-wrap text-gray-800">
+                                    {renderStructured(log.output)}
+                                  </div>
+                                </div>
+                              ))}
+                              {grouped[a.id]?.length > 3 && (
+                                <p className="text-xs text-gray-500">
+                                  +{grouped[a.id].length - 3} more logs...
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Inbox Sidebar */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mailbox className="w-5 h-5" />
+                  Inbox
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {emails.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Mailbox className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">No saved emails</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {emails.map((e) => (
+                      <div key={e.id} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="text-xs text-gray-500">
+                            {new Date(e.createdAt).toLocaleDateString()}
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setInput(e.content)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              Use
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => runEmailOnAll(e)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              <Play className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-700 line-clamp-3">
+                          {e.content.length > 100 ? `${e.content.substring(0, 100)}...` : e.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-
-      <div className="pt-6">
-        <h2 className="text-lg font-semibold mb-3">Inbox</h2>
-        <div className="space-y-3">
-          {emails.length === 0 && <div className="text-sm text-gray-500">No emails yet</div>}
-          {emails.map((e) => (
-            <div key={e.id} className="p-3 border rounded-md">
-              <div className="flex items-start justify-between">
-                <div className="text-sm text-gray-700">
-                  <div className="text-xs text-gray-500">{new Date(e.createdAt).toLocaleString()}</div>
-                  <div className="mt-1 whitespace-pre-wrap text-sm">{e.content}</div>
-                </div>
-                <div className="flex flex-col ml-4 gap-2">
-                  <Button variant="ghost" onClick={() => setInput(e.content)}>Set as input</Button>
-                  <Button onClick={() => runEmailOnAll(e)}>Run on all</Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-
     </div>
-
   )
 }

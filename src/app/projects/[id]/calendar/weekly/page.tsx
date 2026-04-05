@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { CaretLeft, CaretRight, Calendar as CalendarIcon } from "@phosphor-icons/react"
 
 export default function WeeklyView() {
   const params = useParams()
@@ -89,58 +92,116 @@ export default function WeeklyView() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Weekly Planner</h1>
-
-        {/* View switch: Weekly → Monthly */}
-        <div className="p-1">
-          <Link
-            href={id ? `/projects/${id}/calendar` : '#'}
-            className="px-3 py-1 border rounded text-sm bg-white"
-          >
-            Monthly view
-          </Link>
+    <div className="min-h-screen bg-gray-50/50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CalendarIcon className="w-6 h-6 text-blue-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Weekly Planner</h1>
+                <p className="text-gray-600 text-sm">Plan and organize your content schedule</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link href={id ? `/projects/${id}/calendar` : '#'}>
+                <Button variant="outline">
+                  Monthly View
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 🔹 Controls */}
-      <div className="flex gap-2">
-        <button onClick={prevWeek} className="px-3 py-1 border rounded"> Prev </button>
-        <button onClick={nextWeek} className="px-3 py-1 border rounded"> Next </button>
-      </div>
+      {/* Navigation */}
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" onClick={prevWeek}>
+              <CaretLeft className="w-4 h-4 mr-1" />
+              Previous Week
+            </Button>
+            <Button variant="outline" size="sm" onClick={nextWeek}>
+              Next Week
+              <CaretRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+          <div className="text-lg font-semibold text-gray-900">
+            {weekDates[0].toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </div>
+        </div>
 
-      {/* 🔥 Week Grid */}
-      <div className="grid grid-cols-7 gap-2">
-        {weekDates.map((date, i)=>{
-          const dayTasks = getTasksForDate(date)
-          return (
-            <div
-              key={i}
-              onDragOver={(e)=>e.preventDefault()}
-              onDragEnter={(e)=>e.currentTarget.classList.add("bg-blue-100")}
-              onDragLeave={(e)=>e.currentTarget.classList.remove("bg-blue-100")}
-              onDrop={(e)=>{ e.currentTarget.classList.remove("bg-blue-100"); handleDrop(date) }}
-              className="border rounded p-2 min-h-[200px] bg-gray-50 hover:bg-gray-100"
-            >
-              <p className="text-sm font-semibold"> {date.toDateString().slice(0,10)} </p>
+        {/* Week Grid */}
+        <div className="grid grid-cols-7 gap-4">
+          {weekDates.map((date, i) => {
+            const dayTasks = getTasksForDate(date)
+            const isToday = date.toDateString() === new Date().toDateString()
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'short' })
 
-              <div className="space-y-2 mt-2">
-                {dayTasks.length === 0 && (
-                  <p className="text-xs text-gray-400">No tasks</p>
-                )}
-
-                {dayTasks.map(t=>(
-                  <div key={t.id} draggable onDragStart={()=>setDraggedTask(t)} onDragEnd={()=>setDraggedTask(null)} className={`bg-white p-2 rounded shadow text-xs cursor-move ${draggedTask?.id === t.id ? 'opacity-70 border-2 border-dashed' : ''}`}>
-                    <p className="font-medium">{t.title}</p>
-                    <p className="text-gray-500"> {t.platform} • {t.format} </p>
-                    <p className="text-[10px]"> {t.status} </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        })}
+            return (
+              <Card
+                key={i}
+                className={`min-h-[400px] ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+              >
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-center text-sm">
+                    <div className="text-gray-500">{dayName}</div>
+                    <div className={`text-xl ${isToday ? 'text-blue-600 font-bold' : 'text-gray-900'}`}>
+                      {date.getDate()}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragEnter={(e) => e.currentTarget.classList.add("bg-blue-50")}
+                  onDragLeave={(e) => e.currentTarget.classList.remove("bg-blue-50")}
+                  onDrop={(e) => {
+                    e.currentTarget.classList.remove("bg-blue-50")
+                    handleDrop(date)
+                  }}
+                  className="space-y-2 min-h-[300px] cursor-pointer transition-colors"
+                >
+                  {dayTasks.length === 0 ? (
+                    <div className="text-center text-gray-400 text-sm py-8">
+                      No tasks scheduled
+                    </div>
+                  ) : (
+                    dayTasks.map(t => (
+                      <div
+                        key={t.id}
+                        draggable
+                        onDragStart={() => setDraggedTask(t)}
+                        onDragEnd={() => setDraggedTask(null)}
+                        className={`bg-white p-3 rounded-lg border shadow-sm text-xs cursor-move transition-all hover:shadow-md ${
+                          draggedTask?.id === t.id ? 'opacity-50 border-dashed border-blue-300' : ''
+                        }`}
+                      >
+                        <div className="font-medium text-gray-900 mb-1">{t.title}</div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {t.platform && (
+                            <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
+                              {t.platform}
+                            </span>
+                          )}
+                          {t.format && (
+                            <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded-full">
+                              {t.format}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide">
+                          {t.status}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
