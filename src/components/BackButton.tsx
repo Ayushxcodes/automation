@@ -32,10 +32,10 @@ export default function BackButton({ global }: Props) {
   // reposition on /projects so it doesn't overlap the page header
   // For /ai we render in normal flow (sidebar) so use static positioning
   const positionClass = pathname?.startsWith("/projects")
-    ? "absolute left-4 top-60"
+    ? "fixed left-4 top-20"
     : pathname?.startsWith("/ai")
     ? "static"
-    : "absolute left-4 top-4"
+    : "fixed left-4 top-4"
 
   return (
     <button
