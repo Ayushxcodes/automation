@@ -1,20 +1,12 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
-import { cookies } from "next/headers"
+import { requireAdmin } from "@/lib/auth"
 
 export async function POST(req: Request) {
 
   try {
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value
-
-    if (!token) {
-      return NextResponse.json({ success:false, error:"Unauthorized" })
-    }
-
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!)
+    const user = await requireAdmin()
 
     const { name } = await req.json()
 
@@ -23,10 +15,10 @@ export async function POST(req: Request) {
     }
 
     const project = await prisma.project.create({
-      data:{
+      data: {
         name,
-        userId: decoded.userId
-      }
+        userId: user.id,
+      },
     })
 
     return NextResponse.json({

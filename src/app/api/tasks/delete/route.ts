@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/auth"
 
 export async function POST(req: Request) {
   try {
+    await requireAdmin()
     const { taskId } = await req.json()
     if (!taskId) return NextResponse.json({ success: false, error: "Missing taskId" })
 
