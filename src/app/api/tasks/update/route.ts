@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     // 🔒 PERMISSION CHECK: allow if assigned, project owner, or admin
     if (
       task.assignedToId !== user.id &&
-      user.role !== "admin" &&
+      (user.role ?? '').toLowerCase() !== "admin" &&
       task.project?.userId !== user.id
     ) {
       return NextResponse.json({

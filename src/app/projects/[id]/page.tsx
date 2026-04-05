@@ -386,7 +386,7 @@ function Column({ title, tasks, color, onStatusChange, currentUser, fetchLogs }:
 }
 
 function TaskCard({ task, currentUser, onStatusChange, fetchLogs, logsLoading, selectedTaskId }: any) {
-  const canEdit = currentUser && (currentUser.role === "admin" || task.assignedToId === currentUser.id)
+  const canEdit = currentUser && ((currentUser.role ?? '').toLowerCase() === "admin" || task.assignedToId === currentUser.id)
 
   async function handleChange(e: any) {
     const status = e.target.value

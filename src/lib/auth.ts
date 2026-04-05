@@ -31,7 +31,7 @@ export async function getCurrentUser() {
 
 export async function requireAdmin() {
   const user = await getCurrentUser()
-  if (!user || user.role !== "ADMIN") {
+  if (!user || (user.role ?? '').toLowerCase() !== "admin") {
     throw new Error("Unauthorized")
   }
   return user
