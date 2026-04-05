@@ -132,23 +132,29 @@ export default function TasksPage() {
 
   // 🔹 Delete a task
   async function deleteTask(taskId: string) {
-    if (!confirm("Delete this task? This cannot be undone.")) return
-    try {
-      const res = await fetch("/api/tasks/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId })
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success("Task deleted")
-        fetchTasks()
-      } else {
-        toast.error(data.error || "Delete failed")
+    toast("Delete this task? This cannot be undone.", {
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            const res = await fetch("/api/tasks/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ taskId })
+            })
+            const data = await res.json()
+            if (data.success) {
+              toast.success("Task deleted")
+              fetchTasks()
+            } else {
+              toast.error(data.error || "Delete failed")
+            }
+          } catch (e) {
+            toast.error("Delete failed")
+          }
+        }
       }
-    } catch (e) {
-      toast.error("Delete failed")
-    }
+    })
   }
 
   // 🔹 Fetch logs for a task
@@ -238,23 +244,29 @@ export default function TasksPage() {
   const router = useRouter()
 
   async function deleteProject() {
-    if (!confirm("Delete this project and all its tasks? This cannot be undone.")) return
-    try {
-      const res = await fetch("/api/projects/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: id })
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success("Project deleted")
-        router.push('/projects')
-      } else {
-        toast.error(data.error || "Delete failed")
+    toast("Delete this project and all its tasks? This cannot be undone.", {
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            const res = await fetch("/api/projects/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ projectId: id })
+            })
+            const data = await res.json()
+            if (data.success) {
+              toast.success("Project deleted")
+              router.push('/projects')
+            } else {
+              toast.error(data.error || "Delete failed")
+            }
+          } catch (e) {
+            toast.error("Delete failed")
+          }
+        }
       }
-    } catch (e) {
-      toast.error("Delete failed")
-    }
+    })
   }
 
   return (

@@ -44,19 +44,21 @@ export default function Navbar(){
           <div className="flex items-center gap-4">
             <Link href="/" className="font-bold text-lg">Automation</Link>
 
-            <nav className="hidden md:flex gap-2 text-sm items-center">
-              {links.map(l => {
-                const active = pathname === l.href || pathname?.startsWith(l.href + '/')
-                return (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className={`px-3 py-2 rounded-md transition-colors ${active ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100'}`}>
-                    {l.label}
-                  </Link>
-                )
-              })}
-            </nav>
+            {user && (
+              <nav className="hidden md:flex gap-2 text-sm items-center">
+                {links.map(l => {
+                  const active = pathname === l.href || pathname?.startsWith(l.href + '/')
+                  return (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      className={`px-3 py-2 rounded-md transition-colors ${active ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100'}`}>
+                      {l.label}
+                    </Link>
+                  )
+                })}
+              </nav>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -88,9 +90,9 @@ export default function Navbar(){
         </div>
 
         {open && (
-          <div className="md:hidden py-2">
+            <div className="md:hidden py-2">
             <nav className="flex flex-col gap-1">
-              {links.map(l=> (
+              {user && links.map(l => (
                 <Link key={l.href} href={l.href} className="px-3 py-2 rounded hover:bg-gray-100">{l.label}</Link>
               ))}
               <div className="pt-2">
